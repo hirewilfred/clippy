@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Clippy Schedule</title>
+<style>
+/* Layout: one column, upcoming schedule first, then the new-post flow as numbered steps (it is a real sequence). */
+:root{
+  --bg:#13060d; --surface:#1f0b16; --raised:#2a1020; --line:#3d1a2e; --fg:#f6eef2; --muted:#c3a9b8;
+  --accent:#ff4f8b; --accent-ink:#1a0610; --sun:#ffb347; --ok:#38d39f; --warn:#ffb347; --bad:#ff6b6b;
+  --tiktok:#25f4ee; --youtube:#ff3d3d;
+  --font:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,"SF Mono",Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--font);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 60px}
+.wrap{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{margin:0;line-height:1.2;text-wrap:balance}
+h1{font-size:1.5rem;letter-spacing:-.01em} h1 span{color:var(--accent)}
+h2{font-size:1.15rem}
+p{margin:0}
+.muted{color:var(--muted)} .small{font-size:13px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.banner{border-radius:10px;padding:10px 14px;font-weight:600;font-size:14px}
+.banner.live{background:#ff6b6b22;color:var(--bad);border:1px solid #ff6b6b55}
+.banner.dry{background:#38d39f1a;color:var(--ok);border:1px solid #38d39f44}
+.banner.warn{background:#ffb3471a;color:var(--warn);border:1px solid #ffb34744}
+label{display:flex;flex-direction:column;gap:5px;font-weight:600;font-size:13px;color:var(--muted)}
+input,textarea,select{font:inherit;color:var(--fg);background:var(--raised);border:1px solid var(--line);border-radius:9px;padding:9px 11px;width:100%}
+input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+input[readonly],textarea[readonly]{opacity:.75}
+textarea{min-height:104px;resize:vertical}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.row>*{flex:1 1 200px;min-width:0}
+.check{flex-direction:row;align-items:center;gap:8px;font-weight:500;color:var(--fg)}
+.check input{width:auto}
+button{font:inherit;font-weight:700;border-radius:10px;border:1px solid var(--line);background:var(--raised);color:var(--fg);padding:10px 16px;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+button.ghost{background:transparent}
+button.danger{color:var(--bad);border-color:#ff6b6b55;background:transparent}
+button:disabled{opacity:.45;cursor:not-allowed}
+.btns{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.step{display:flex;gap:10px;align-items:baseline}
+.step b{font:700 12px var(--mono);color:var(--accent);letter-spacing:.06em;text-transform:uppercase}
+.chip{display:inline-flex;align-items:center;gap:6px;font:700 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:999px;border:1px solid currentColor}
+.chip.tiktok{color:var(--tiktok)} .chip.youtube{color:var(--youtube)}
+.pill{display:inline-block;font-weight:700;font-size:12px;padding:3px 10px;border-radius:999px}
+.pill.ok{background:#38d39f22;color:var(--ok)} .pill.bad{background:#ff6b6b22;color:var(--bad)} .pill.warn{background:#ffb34722;color:var(--warn)}
+ul.errs{margin:4px 0 0;padding-left:18px;color:var(--bad);font-size:14px}
+.sched{display:flex;flex-direction:column}
+.sched .day{font:700 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--sun);padding:10px 0 6px}
+.item{display:grid;grid-template-columns:78px 92px 1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.item .time{font:700 15px var(--mono);font-variant-numeric:tabular-nums}
+.item .txt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:14px}
+.item .txt b{color:var(--fg);font-weight:600}
+@media (max-width:560px){.item{grid-template-columns:64px 1fr auto}.item .txt{grid-column:1/-1;white-space:normal}}
+.media{display:grid;grid-template-columns:minmax(0,220px) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:640px){.media{grid-template-columns:1fr}}
+video{width:100%;max-width:220px;border-radius:12px;background:#000;aspect-ratio:9/16;object-fit:contain}
+canvas{width:100%;height:auto;border-radius:10px;border:1px solid var(--line);background:#000}
+pre{white-space:pre-wrap;word-break:break-word;background:var(--raised);border:1px solid var(--line);border-radius:10px;padding:10px;margin:0;font:13px/1.5 var(--mono);max-height:280px;overflow:auto}
+.review{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.toast{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--raised);border:1px solid var(--line);padding:10px 16px;border-radius:10px;font-weight:600;max-width:min(92vw,560px);z-index:20}
+.toast.bad{color:var(--bad)} .toast.ok{color:var(--ok)}
+.empty{color:var(--muted);padding:6px 0}
+#login{max-width:380px;margin:12vh auto 0}
+.prog{height:6px;background:var(--raised);border-radius:99px;overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+@media (prefers-reduced-motion:reduce){.prog i{transition:none}}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <section id="login" class="card" hidden>
+    <h1>Clippy <span>Schedule</span></h1>
+    <p class="muted">Approve and schedule clips to TikTok and YouTube.</p>
+    <form id="loginForm" class="btns" style="flex-direction:column;align-items:stretch">
+      <label for="pw">Password<input id="pw" type="password" autocomplete="current-password" required></label>
+      <button class="primary" type="submit">Sign in</button>
+      <p id="loginErr" class="small" style="color:var(--bad)" hidden></p>
+    </form>
+  </section>
+
+  <main id="app" class="wrap" hidden>
+    <header>
+      <h1>Clippy <span>Schedule</span></h1>
+      <div class="btns"><button class="ghost" id="refreshBtn" type="button">Refresh</button><button class="ghost" id="logoutBtn" type="button">Sign out</button></div>
+    </header>
+    <div id="modeBanner" class="banner dry"></div>
+    <div id="configBanner" class="banner warn" hidden></div>
+
+    <section class="card" aria-labelledby="upH">
+      <div class="row" style="align-items:center"><h2 id="upH">Scheduled</h2><p class="muted small" style="text-align:right">Times in Eastern</p></div>
+      <div id="sched" class="sched"><p class="empty">Loading the schedule…</p></div>
+    </section>
+
+    <section class="card" aria-labelledby="newH">
+      <h2 id="newH">New post</h2>
+
+      <div class="step"><b>Step 1</b><span>Choose the finished clip (vertical, 12-20 s). It goes up exactly as it is.</span></div>
+      <div class="media">
+        <video id="preview" controls playsinline preload="metadata"></video>
+        <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+          <label for="file">Video file<input id="file" type="file" accept="video/mp4,video/quicktime"></label>
+          <p id="fileInfo" class="muted small">No clip chosen.</p>
+          <div class="row">
+            <label for="streamer">Streamer (Twitch handle)<input id="streamer" placeholder="hutchmf" autocomplete="off"></label>
+            <label for="hook">Hook (2-6 words)<input id="hook" placeholder="He trusted the bushes" autocomplete="off"></label>
+          </div>
+          <div class="btns"><button id="fillBtn" type="button">Fill in the text</button></div>
+        </div>
+      </div>
+
+      <div class="step"><b>Step 2</b><span>Check the text. Editing anything after approval voids the approval.</span></div>
+      <label for="caption">TikTok caption<textarea id="caption"></textarea></label>
+      <label for="ytTitle">YouTube title (max 60)<input id="ytTitle" maxlength="100"></label>
+      <label for="ytDesc">YouTube description<textarea id="ytDesc"></textarea></label>
+
+      <div class="step"><b>Step 3</b><span>YouTube thumbnail</span></div>
+      <canvas id="thumb" width="1280" height="720" aria-label="Thumbnail preview"></canvas>
+      <div class="row">
+        <label for="thumbText">Thumbnail text (2-5 words)<input id="thumbText" autocomplete="off"></label>
+        <label for="thumbAt">Frame <span id="thumbAtVal" class="muted">0.0 s</span><input id="thumbAt" type="range" min="0" max="20" step="0.1" value="0"></label>
+      </div>
+      <label class="check" for="attachThumb"><input id="attachThumb" type="checkbox"> Send this thumbnail to YouTube (only works on verified channels; leave off if unsure)</label>
+
+      <div class="step"><b>Step 4</b><span>Where and when</span></div>
+      <div class="row">
+        <label class="check" for="pTik" style="flex:0 1 auto"><input id="pTik" type="checkbox" checked> <span class="chip tiktok">TikTok</span></label>
+        <label class="check" for="pYt" style="flex:0 1 auto"><input id="pYt" type="checkbox" checked> <span class="chip youtube">YouTube</span></label>
+        <label for="mode">When<select id="mode"><option value="schedule">Schedule</option><option value="now">Post now</option></select></label>
+        <label for="when">Date and time (Eastern)<input id="when" type="datetime-local"></label>
+      </div>
+      <div id="gates" class="review"></div>
+
+      <div class="step"><b>Step 5</b><span>Approve. This uploads the clip and locks the exact video and text.</span></div>
+      <label class="check" for="watched"><input id="watched" type="checkbox"> I watched the whole clip and checked the text</label>
+      <div class="prog" id="prog" hidden><i></i></div>
+      <div class="btns">
+        <button class="primary" id="approveBtn" type="button">Approve</button>
+        <button class="ghost" id="editBtn" type="button" hidden>Edit (voids approval)</button>
+        <span id="approvedPill" class="pill ok" hidden>Approved</span>
+      </div>
+
+      <div id="reviewBox" hidden style="display:flex;flex-direction:column;gap:12px">
+        <div class="step"><b>Step 6</b><span id="reviewLead">Review exactly what goes out.</span></div>
+        <div id="reviewCards" class="review"></div>
+        <div class="btns">
+          <button class="primary" id="confirmBtn" type="button">Schedule</button>
+          <button class="ghost" id="cancelReviewBtn" type="button">Cancel</button>
+        </div>
+      </div>
+      <pre id="result" hidden></pre>
+    </section>
+  </main>
+</div>
+<div id="toast" class="toast" role="status" hidden></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const state = { file: null, duration: null, token: null, approvedPost: null, live: false };
+const TZ = "America/Toronto";
+
+function toast(msg, kind = "") {
+  const t = $("toast"); t.textContent = msg; t.className = "toast " + kind; t.hidden = false;
+  clearTimeout(toast._t); toast._t = setTimeout(() => (t.hidden = true), 5000);
+}
+async function api(path, opts = {}) {
+  const r = await fetch(path, { method: opts.method || "GET", headers: { "Content-Type": "application/json" },
+    body: opts.body ? JSON.stringify(opts.body) : undefined, credentials: "same-origin" });
+  let j = {}; try { j = await r.json(); } catch {}
+  if (r.status === 401 && path !== "/api/login") { showLogin(); throw new Error("Sign in first"); }
+  if (!r.ok) { const e = new Error(j.error || `Request failed (${r.status})`); e.data = j; throw e; }
+  return j;
+}
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmtTime = (d) => d.toLocaleTimeString("en-US", { timeZone: TZ, hour: "numeric", minute: "2-digit" });
+const fmtDay = (d) => d.toLocaleDateString("en-US", { timeZone: TZ, weekday: "short", month: "short", day: "numeric" });
+
+/* ---------- auth ---------- */
+function showLogin() { $("app").hidden = true; $("login").hidden = false; $("pw").focus(); }
+async function boot() {
+  const me = await api("/api/me");
+  if (!me.signedIn) return showLogin();
+  state.live = me.live;
+  $("login").hidden = true; $("app").hidden = false;
+  $("modeBanner").className = "banner " + (me.live ? "live" : "dry");
+  $("modeBanner").textContent = me.live ? "LIVE: confirmed posts go to TikTok and YouTube for real."
+    : "DRY-RUN: nothing will be posted. You'll see exactly what would be sent.";
+  $("confirmBtn").textContent = me.live ? "Schedule" : "Run dry-run";
+  $("configBanner").hidden = me.blotatoConfigured;
+  $("configBanner").textContent = "Blotato isn't connected yet: add BLOTATO_API_KEY in Vercel > clippy-schedule > Settings > Environment Variables, then redeploy.";
+  if (!$("when").value) $("when").value = suggestTime();
+  loadSchedule();
+}
+$("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault(); $("loginErr").hidden = true;
+  try { await api("/api/login", { method: "POST", body: { password: $("pw").value } }); $("pw").value = ""; boot(); }
+  catch (err) { $("loginErr").textContent = err.message; $("loginErr").hidden = false; }
+});
+$("logoutBtn").onclick = async () => { await api("/api/login", { method: "DELETE" }).catch(() => {}); showLogin(); };
+$("refreshBtn").onclick = () => { loadSchedule(); checkGates(); };
+
+/* ---------- schedule ---------- */
+let scheduleCache = [];
+async function loadSchedule() {
+  const box = $("sched");
+  try {
+    const { items } = await api("/api/schedules");
+    scheduleCache = items;
+    if (!items.length) { box.innerHTML = '<p class="empty">Nothing scheduled.</p>'; return; }
+    let html = "", lastDay = "";
+    for (const it of items) {
+      const d = new Date(it.scheduledAt), day = fmtDay(d);
+      if (day !== lastDay) { html += `<div class="day">${esc(day)}</div>`; lastDay = day; }
+      const label = it.platform === "youtube" ? (it.title || it.text) : (it.text.split("\n")[0]);
+      html += `<div class="item"><span class="time">${esc(fmtTime(d))}</span><span><span class="chip ${esc(it.platform)}">${esc(it.platform)}</span></span>
+        <span class="txt"><b>${esc(label)}</b></span>
+        <span class="btns" data-id="${esc(it.id)}"><button class="danger" type="button" data-act="ask">Cancel</button></span></div>`;
+    }
+    box.innerHTML = html;
+  } catch (e) { box.innerHTML = `<p class="empty">Couldn't load the schedule: ${esc(e.message)}</p>`; }
+}
+$("sched").addEventListener("click", async (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  const wrap = b.closest("[data-id]"), id = wrap.dataset.id;
+  if (b.dataset.act === "ask") {
+    wrap.innerHTML = '<button class="danger" type="button" data-act="yes">Remove post</button><button class="ghost" type="button" data-act="no">Keep</button>';
+  } else if (b.dataset.act === "no") { loadSchedule(); }
+  else if (b.dataset.act === "yes") {
+    b.disabled = true;
+    try { await api("/api/schedules", { method: "DELETE", body: { id } }); toast("Removed from the schedule", "ok"); }
+    catch (err) { toast(err.message, "bad"); }
+    loadSchedule(); checkGates();
+  }
+});
+
+/* ---------- step 1: clip ---------- */
+$("file").addEventListener("change", () => {
+  const f = $("file").files[0]; if (!f) return;
+  voidApproval();
+  state.file = f; state.duration = null;
+  const v = $("preview"); v.src = URL.createObjectURL(f);
+  $("fileInfo").textContent = `${f.name} · ${(f.size / 1048576).toFixed(1)} MB · reading length…`;
+});
+$("preview").addEventListener("loadedmetadata", () => {
+  const v = $("preview");
+  state.duration = Math.round(v.duration * 10) / 10;
+  const ok = state.duration >= 12 && state.duration <= 20;
+  $("fileInfo").innerHTML = `${esc(state.file.name)} · ${(state.file.size / 1048576).toFixed(1)} MB · <b style="color:var(${ok ? "--ok" : "--bad"})">${state.duration.toFixed(1)} s</b> · ${v.videoWidth}×${v.videoHeight}`;
+  $("thumbAt").max = state.duration.toFixed(1);
+  $("thumbAt").value = (state.duration * 0.7).toFixed(1);
+  drawThumb(); checkGates();
+});
+$("fillBtn").onclick = () => {
+  const s = $("streamer").value.trim().replace(/^@/, "").toLowerCase();
+  const h = $("hook").value.trim().replace(/\s+/g, " ");
+  if (!s || !h) return toast("Enter the streamer and the hook first", "bad");
+  voidApproval();
+  $("caption").value = `${h.toLowerCase()}\n\nCredit: @${s} (Twitch)\n\n#gta6 #${s} #gaming #funnymoments`;
+  const t = `${h} #gta6`; $("ytTitle").value = t.length <= 60 ? t : h.slice(0, 60);
+  $("ytDesc").value = `Credit: @${s} (Twitch)\nhttps://www.twitch.tv/${s}\n\n#gta6 #${s} #gaming\n\nFan page. Not affiliated with Rockstar Games.`;
+  if (!$("thumbText").value) $("thumbText").value = h.toUpperCase();
+  drawThumb(); checkGates();
+};
+
+/* ---------- step 3: thumbnail ---------- */
+const thumbVideo = document.createElement("video"); thumbVideo.muted = true; thumbVideo.playsInline = true;
+function wrapWords(ctx, text, maxW) {
+  const words = text.split(/\s+/).filter(Boolean), lines = []; let cur = "";
+  for (const w of words) { const t = cur ? cur + " " + w : w; if (ctx.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t; }
+  if (cur) lines.push(cur); return lines;
+}
+function paintThumb(frame) {
+  const c = $("thumb"), ctx = c.getContext("2d"), W = 1280, H = 720;
+  ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
+  if (frame) {
+    const fw = frame.videoWidth, fh = frame.videoHeight, cover = Math.max(W / fw, H / fh);
+    ctx.save(); ctx.filter = "blur(26px) brightness(0.7)";
+    ctx.drawImage(frame, (W - fw * cover) / 2, (H - fh * cover) / 2, fw * cover, fh * cover); ctx.restore();
+    const s = H / fh; ctx.drawImage(frame, 40, 0, fw * s, H);
+  }
+  const text = ($("thumbText").value || "").replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, "").toUpperCase().trim();
+  if (!text) return;
+  const x0 = 460, boxW = W - x0 - 30;
+  let size = 104, lines;
+  do { ctx.font = `900 ${size}px Impact, "Arial Black", system-ui, sans-serif`; lines = wrapWords(ctx, text, boxW); size -= 6; } while ((lines.length * size * 1.08 > H - 80 || lines.some((l) => ctx.measureText(l).width > boxW)) && size > 40);
+  size += 6; ctx.font = `900 ${size}px Impact, "Arial Black", system-ui, sans-serif`;
+  const step = size * 1.08, top = H / 2 - (lines.length * step) / 2 + size * 0.85;
+  ctx.textAlign = "center"; ctx.lineJoin = "round"; ctx.lineWidth = Math.max(10, size / 7); ctx.strokeStyle = "#000";
+  lines.forEach((ln, i) => {
+    const y = top + i * step, x = x0 + boxW / 2;
+    ctx.strokeText(ln, x, y); ctx.fillStyle = i === lines.length - 1 && lines.length > 1 ? "#ffe600" : "#fff"; ctx.fillText(ln, x, y);
+  });
+}
+function drawThumb() {
+  if (!state.file) return paintThumb(null);
+  if (thumbVideo.dataset.src !== $("preview").src) { thumbVideo.src = $("preview").src; thumbVideo.dataset.src = $("preview").src; }
+  const t = parseFloat($("thumbAt").value) || 0; $("thumbAtVal").textContent = t.toFixed(1) + " s";
+  const go = () => { thumbVideo.currentTime = Math.min(t, (thumbVideo.duration || t) - 0.05); };
+  thumbVideo.onseeked = () => paintThumb(thumbVideo);
+  if (thumbVideo.readyState >= 1) go(); else thumbVideo.onloadedmetadata = go;
+}
+$("thumbAt").addEventListener("input", () => { voidApproval(true); drawThumb(); });
+$("thumbText").addEventListener("input", () => { voidApproval(true); drawThumb(); });
+$("attachThumb").addEventListener("change", () => { voidApproval(); checkGates(); });
+paintThumb(null);
+
+/* ---------- gates ---------- */
+const platforms = () => [$("pTik").checked && "tiktok", $("pYt").checked && "youtube"].filter(Boolean);
+function whenValue() {
+  // datetime-local is read in the browser's own timezone; this page is meant to be used in Eastern time.
+  const v = $("when").value; return v ? new Date(v).toISOString() : null;
+}
+function suggestTime() {
+  const d = new Date(Date.now() + 30 * 60000); d.setSeconds(0, 0);
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function draftPost(urls = {}) {
+  return { mediaUrl: urls.mediaUrl || (state.approvedPost && state.approvedPost.mediaUrl) || "https://database.blotato.io/pending",
+    thumbUrl: urls.thumbUrl || (state.approvedPost && state.approvedPost.thumbUrl) || null,
+    attachThumb: $("attachThumb").checked, streamer: $("streamer").value, durationSec: state.duration,
+    caption: $("caption").value, ytTitle: $("ytTitle").value, ytDescription: $("ytDesc").value };
+}
+let gateTimer;
+function checkGates() { clearTimeout(gateTimer); gateTimer = setTimeout(runGates, 350); }
+async function runGates() {
+  const box = $("gates"); const sel = platforms();
+  if (!sel.length) { box.innerHTML = '<p class="empty">Pick at least one platform.</p>'; return; }
+  try {
+    const post = draftPost(); if (post.attachThumb && !post.thumbUrl) post.thumbUrl = "https://database.blotato.io/pending";
+    const r = await api("/api/check", { method: "POST", body: { post, mode: $("mode").value, scheduledFor: whenValue() } });
+    box.innerHTML = sel.map((p) => {
+      const errs = (r.results[p] || []).filter((e) => !(e === "no video uploaded" && state.file));
+      return `<div><span class="chip ${p}">${p}</span> ${errs.length ? `<ul class="errs">${errs.map((e) => `<li>${esc(e)}</li>`).join("")}</ul>` : '<span class="pill ok">ready</span>'}</div>`;
+    }).join("") + (r.note ? `<p class="small" style="color:var(--warn)">${esc(r.note)}</p>` : "");
+  } catch (e) { box.innerHTML = `<p class="small" style="color:var(--bad)">${esc(e.message)}</p>`; }
+}
+for (const id of ["caption", "ytTitle", "ytDesc", "streamer"]) $(id).addEventListener("input", () => { voidApproval(); checkGates(); });
+for (const id of ["pTik", "pYt", "mode", "when"]) $(id).addEventListener("change", () => { $("when").disabled = $("mode").value === "now"; hideReview(); checkGates(); });
+
+/* ---------- approve ---------- */
+function setLocked(on) {
+  for (const id of ["caption", "ytTitle", "ytDesc", "streamer", "hook", "thumbText"]) $(id).readOnly = on;
+  for (const id of ["file", "thumbAt", "attachThumb", "fillBtn"]) $(id).disabled = on;
+  $("approveBtn").hidden = on; $("editBtn").hidden = !on; $("approvedPill").hidden = !on; $("watched").disabled = on;
+}
+function voidApproval(silent) {
+  if (!state.token) return;
+  state.token = null; state.approvedPost = null; setLocked(false); hideReview();
+  if (!silent) toast("Edited: approval voided");
+}
+function hideReview() { $("reviewBox").hidden = true; }
+$("editBtn").onclick = () => { state.token = null; state.approvedPost = null; setLocked(false); hideReview(); toast("Approval voided. Edit, then approve again."); };
+
+async function uploadBlob(blob, filename, onProgress) {
+  const { presignedUrl, publicUrl } = await api("/api/upload-url", { method: "POST", body: { filename } });
+  await new Promise((resolve, reject) => {
+    const x = new XMLHttpRequest(); x.open("PUT", presignedUrl); x.setRequestHeader("Content-Type", blob.type || "application/octet-stream");
+    x.upload.onprogress = (e) => e.lengthComputable && onProgress && onProgress(e.loaded / e.total);
+    x.onload = () => (x.status >= 200 && x.status < 300 ? resolve() : reject(new Error(`Upload failed (${x.status})`)));
+    x.onerror = () => reject(new Error("Upload failed (network)")); x.send(blob);
+  });
+  return publicUrl;
+}
+$("approveBtn").onclick = async () => {
+  if (!state.file || !state.duration) return toast("Choose the clip first", "bad");
+  if (!$("watched").checked) return toast("Tick the box to confirm you watched it", "bad");
+  if (!platforms().length) return toast("Pick at least one platform", "bad");
+  const btn = $("approveBtn"); btn.disabled = true; const prog = $("prog"); prog.hidden = false; const bar = prog.firstElementChild;
+  try {
+    const ext = (state.file.name.split(".").pop() || "mp4").toLowerCase();
+    const mediaUrl = await uploadBlob(state.file, `clippy-${Date.now()}.${ext}`, (f) => (bar.style.width = Math.round(f * 85) + "%"));
+    let thumbUrl = null;
+    if ($("attachThumb").checked) {
+      const blob = await new Promise((r) => $("thumb").toBlob(r, "image/jpeg", 0.9));
+      thumbUrl = await uploadBlob(blob, `clippy-thumb-${Date.now()}.jpg`);
+    }
+    bar.style.width = "95%";
+    const post = draftPost({ mediaUrl, thumbUrl });
+    const r = await api("/api/approve", { method: "POST", body: { post, platforms: platforms(), watched: true } });
+    state.token = r.token; state.approvedPost = post; bar.style.width = "100%";
+    setLocked(true); showReview(); checkGates();
+    toast("Approved and uploaded", "ok");
+  } catch (e) {
+    const errs = e.data && e.data.errors ? Object.entries(e.data.errors).flatMap(([p, l]) => l.map((x) => `${p}: ${x}`)) : [];
+    toast(errs.length ? errs.join(" · ") : e.message, "bad");
+  } finally { btn.disabled = false; setTimeout(() => { prog.hidden = true; bar.style.width = "0"; }, 600); }
+};
+
+/* ---------- review + post ---------- */
+function showReview() {
+  const p = state.approvedPost, sel = platforms(), now = $("mode").value === "now";
+  const when = now ? "right now" : new Date(whenValue()).toLocaleString("en-US", { timeZone: TZ, weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) + " ET";
+  $("reviewLead").textContent = `Review exactly what goes out, ${when}.`;
+  $("reviewCards").innerHTML = sel.map((pl) => pl === "tiktok"
+    ? `<div><span class="chip tiktok">TikTok</span><pre>${esc(p.caption)}</pre></div>`
+    : `<div><span class="chip youtube">YouTube</span><pre>TITLE: ${esc(p.ytTitle)}\n\n${esc(p.ytDescription)}${p.attachThumb ? "\n\n[thumbnail attached]" : ""}</pre></div>`).join("");
+  $("confirmBtn").textContent = (state.live ? (now ? "Post now" : "Schedule") : "Run dry-run") + ` · ${sel.join(" + ")}`;
+  $("reviewBox").hidden = false; $("result").hidden = true;
+}
+$("cancelReviewBtn").onclick = () => { hideReview(); toast("Nothing was scheduled"); };
+for (const id of ["pTik", "pYt", "mode", "when"]) $(id).addEventListener("change", () => { if (state.token) showReview(); });
+$("confirmBtn").onclick = async () => {
+  const btn = $("confirmBtn"); btn.disabled = true;
+  try {
+    const r = await api("/api/post", { method: "POST", body: { post: state.approvedPost, token: state.token, platforms: platforms(),
+      mode: $("mode").value, scheduledFor: whenValue(), confirm: true } });
+    const lines = Object.entries(r.results).map(([p, x]) => x.dryRun ? `${p}: dry-run OK (nothing sent)` : x.ok ? `${p}: ${r.when ? "scheduled" : "posting now"} ✓ (${x.postSubmissionId})` : `${p}: FAILED: ${x.error}`);
+    $("result").textContent = lines.join("\n") + (r.live ? "" : "\n\nPayload that would be sent:\n" + JSON.stringify(Object.fromEntries(Object.entries(r.results).map(([p, x]) => [p, x.payload])), null, 2));
+    $("result").hidden = false;
+    const anyFail = Object.values(r.results).some((x) => x.ok === false);
+    toast(anyFail ? "Some posts failed; see below" : r.live ? "Done" : "Dry-run complete", anyFail ? "bad" : "ok");
+    if (r.live && !anyFail) { resetForm(); }
+    loadSchedule();
+  } catch (e) {
+    const errs = e.data && e.data.errors ? Object.entries(e.data.errors).flatMap(([p, l]) => l.map((x) => `${p}: ${x}`)) : [];
+    $("result").textContent = [e.message, ...errs].join("\n"); $("result").hidden = false; toast(e.message, "bad");
+  } finally { btn.disabled = false; }
+};
+function resetForm() {
+  state.token = null; state.approvedPost = null; state.file = null; state.duration = null; setLocked(false); hideReview();
+  for (const id of ["caption", "ytTitle", "ytDesc", "streamer", "hook", "thumbText", "file"]) $(id).value = "";
+  $("watched").checked = false; $("attachThumb").checked = false; $("preview").removeAttribute("src"); $("fileInfo").textContent = "No clip chosen.";
+  $("when").value = suggestTime(); paintThumb(null);
+}
+
+boot().catch(() => showLogin());
+</script>
+</body>
+</html>
