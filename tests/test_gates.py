@@ -196,3 +196,4 @@ def test_naive_datetime_rejected():
 def test_real_warmup_config_loads():
     w = gates.load_warmup()
     assert gates.daily_cap(w, datetime(2026, 11, 22, 12, tzinfo=ET)) == 2
+    assert gates.daily_cap(w, datetime(2026, 11, 21, 19, 45, tzinfo=ET)) == 2   # owner raised day 1
