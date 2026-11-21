@@ -1,6 +1,13 @@
 # Scripts
 
-Planned (being built):
+Run tests: `python3 -m pytest -q` from the repo root.
+
+| Script | Status |
+|---|---|
+| `gates.py` | Done: 31 tests |
+| `clip.py` | Done: 18 tests incl. an end-to-end render. `python -m scripts.clip spec.json --preview` |
+
+Still to build:
 
 | Script | Job |
 |---|---|
