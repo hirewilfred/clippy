@@ -1,0 +1,17 @@
+{
+  "_comment": "Streamers the public scout checks for fresh clips. Mid-size streamers with real facecams give the best yield; big names are a race other pages win. Edit freely. Posting permission lives in the Supabase `streamers` table, not here.",
+  "game_category": "Grand Theft Auto VI",
+  "launch_utc": "2026-11-18T11:00:00Z",
+  "max_age_hours": 24,
+  "min_source_seconds": 14,
+  "max_source_seconds": 60,
+  "min_views": 500,
+  "clips_per_channel": 20,
+  "streamers": [
+    "ohnepixel",
+    "xqc",
+    "ishowspeed",
+    "lacy",
+    "squeex"
+  ]
+}

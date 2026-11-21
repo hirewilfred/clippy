@@ -5,6 +5,8 @@ Run tests: `python3 -m pytest -q` from the repo root.
 | Script | Status |
 |---|---|
 | `gates.py` | Done: 31 tests |
+| `scout.py` | Done: public Twitch pages, no API key. Watchlist in `config/watchlist.json` |
+| `sheet.py` | Done: download + timestamped contact sheet |
 | `clip.py` | Done: 18 tests incl. an end-to-end render. `python -m scripts.clip spec.json --preview` |
 
 Still to build:
