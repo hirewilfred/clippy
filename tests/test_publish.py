@@ -72,7 +72,7 @@ def test_live_flow_with_fake_http(monkeypatch, tmp_path):
         calls.append((req.get_method(), req.full_url, req.headers.get("Blotato-api-key"), req.data))
         url = req.full_url
         if "/users/me/accounts" in url:
-            return FakeResp(json.dumps({"items": [{"id": "77", "username": "clippyclub67"}]}).encode())
+            return FakeResp(json.dumps({"items": [{"id": "77", "username": "clippyclubgta6"}]}).encode())
         if url.endswith("/media/uploads"):
             return FakeResp(json.dumps({"presignedUrl": "https://s3/put", "publicUrl": "https://cdn/clip.mp4"}).encode())
         if url == "https://s3/put":
@@ -98,7 +98,7 @@ def test_account_must_be_unique_handle(monkeypatch):
     def opener(req, timeout=60):
         return FakeResp(json.dumps({"items": [{"id": "1", "username": "someoneelse"}]}).encode())
 
-    with pytest.raises(publish.BlotatoError, match="clippyclub67"):
+    with pytest.raises(publish.BlotatoError, match="clippyclubgta6"):
         Blotato(api_key="k", opener=opener).account_id("tiktok")
 
 

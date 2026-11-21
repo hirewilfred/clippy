@@ -56,7 +56,7 @@ Show the gate results live in the Review UI for the chosen time, so the owner se
 - Run the gates. If any fail: 422 with the reasons.
 - If `LIVE !== "true"`: return the exact Blotato payloads (dry-run) and record `dryRun: true`.
 - Otherwise, for each platform, using the Blotato REST v2 API (`https://backend.blotato.com/v2`, header `blotato-api-key: $BLOTATO_API_KEY`, server-side only):
-  1. Resolve the account: `GET /users/me/accounts?platform=<p>`. There must be exactly one item with `username` `clippyclub67`, or the env `BLOTATO_TIKTOK_ACCOUNT_ID` / `BLOTATO_YOUTUBE_ACCOUNT_ID` must be set. Otherwise refuse.
+  1. Resolve the account: `GET /users/me/accounts?platform=<p>`. Use the env `BLOTATO_TIKTOK_ACCOUNT_ID` (= `70702`, @clippyclubgta6) and `BLOTATO_YOUTUBE_ACCOUNT_ID` (= `58996`, "Clippyclub (ClippyclubGTA6)"). If they're unset, there must be exactly one account whose `username` is `clippyclubgta6` or whose `fullname` contains `(ClippyclubGTA6)`. Otherwise refuse.
   2. Upload the video: `POST /media/uploads {filename}` → `{presignedUrl, publicUrl}`, then `PUT` the bytes to `presignedUrl` with `Content-Type: video/mp4`. **Don't send the API key to the presigned URL.** Do the same for the thumbnail (YouTube only).
   3. `POST /posts` with body:
      - TikTok:
@@ -95,7 +95,7 @@ On an approved draft, add a **Post** panel:
 - Per-platform status rows with **Refresh status** and **Mark cancelled**.
 
 ## 7. Env (Vercel project settings, never in code)
-`BLOTATO_API_KEY`, `LIVE` (`true` only when ready), and optionally `BLOTATO_TIKTOK_ACCOUNT_ID` and `BLOTATO_YOUTUBE_ACCOUNT_ID`.
+`BLOTATO_API_KEY`, `LIVE` (`true` only when ready), `BLOTATO_TIKTOK_ACCOUNT_ID=70702` and `BLOTATO_YOUTUBE_ACCOUNT_ID=58996`.
 
 ## 8. Tests (required before deploy)
 Port every case in `tests/test_gates.py` and `tests/test_publish.py`. At minimum:

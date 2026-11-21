@@ -26,7 +26,7 @@ from pathlib import Path
 from scripts.gates import PostRequest, check
 
 BASE = "https://backend.blotato.com/v2"
-HANDLE = "clippyclub67"
+HANDLE = "clippyclubgta6"
 
 
 class PublishRefused(RuntimeError):
@@ -107,7 +107,11 @@ class Blotato:
         if env:
             return env
         items = self.accounts(platform)
-        match = [a for a in items if (a.get("username") or "").lstrip("@").lower() == handle]
+        # Blotato returns the TikTok handle in `username`; YouTube channels may only carry `fullname`
+        # (e.g. "Clippyclub (ClippyclubGTA6)"), so match either.
+        match = [a for a in items
+                 if (a.get("username") or "").lstrip("@").lower() == handle
+                 or f"({handle})" in (a.get("fullname") or "").lower()]
         if len(match) != 1:
             names = [a.get("username") for a in items]
             raise BlotatoError(f"expected exactly one {platform} account '@{handle}', found {names}")
