@@ -1,0 +1,12 @@
+# Scripts
+
+Planned (being built):
+
+| Script | Job |
+|---|---|
+| `scout.py` | Twitch Helix top GTA 6 clips, last 3-24h, English; writes candidates to `clips` |
+| `sheet.py` | Contact sheet (1 frame / 2 s) per candidate for visual verification |
+| `clip.py` | JSON spec to 1080x1920 30fps payoff-first render via ffmpeg |
+| `gates.py` | Publisher gates: approval hash match, allowlist, warm-up cap, gap, pauses, caption rules |
+| `publish.py` | Blotato publisher; dry-run unless LIVE=true |
+| `metrics.py` | Pulls post stats into `metrics` |

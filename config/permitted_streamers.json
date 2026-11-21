@@ -1,0 +1,4 @@
+{
+  "_comment": "Source of truth is the Supabase `streamers` table; this file seeds it. permission: allowlisted (written OK on file) | credit_only (needs manual approval per clip) | blocked (never post).",
+  "streamers": []
+}

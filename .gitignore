@@ -1,0 +1,38 @@
+# Secrets: never commit (this repo is public)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials*.json
+
+# Video and media work files
+*.mp4
+*.mov
+*.mkv
+*.webm
+*.wav
+*.mp3
+*.srt
+downloads/
+renders/
+clips/
+sheets/
+proof_frames/
+work/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# Node
+node_modules/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
