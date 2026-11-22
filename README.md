@@ -1,6 +1,6 @@
 # Clippy Club
 
-An automated clipping page for GTA 6 streamer moments on TikTok and YouTube Shorts (@clippyclub67).
+An automated clipping page for GTA 6 streamer moments on TikTok and YouTube Shorts (@clippyclubgta6).
 
 A scheduled agent finds funny streamer moments on Twitch, checks they're fresh and really GTA 6, cuts them into vertical clips that are edited payoff-first, and queues them for human approval. Approved clips are posted through Blotato. The agent also tracks results and runs one experiment at a time.
 

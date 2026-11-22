@@ -4,7 +4,7 @@ Paste everything below the line into a new Claude Code session that has `hirewil
 
 ---
 
-Context: Clippy Club is a faceless GTA 6 streamer-clip page (TikTok + YouTube Shorts, handle @clippyclub67). GTA 6 launched Nov 19, 2026. The model to follow is Nate Herk's "Faceless Clipping Page Run by Grok Bot" guide (AI Automation Society): a 2-hour CEO routine that analyzes, checks for stuck posts, learns, scouts, verifies, cuts, QAs, schedules, strategizes, updates the dashboard, cleans up, and reports. We're porting it from Grok Bot to Claude Code cloud agents.
+Context: Clippy Club is a faceless GTA 6 streamer-clip page (TikTok + YouTube Shorts, handle @clippyclubgta6). GTA 6 launched Nov 19, 2026. The model to follow is Nate Herk's "Faceless Clipping Page Run by Grok Bot" guide (AI Automation Society): a 2-hour CEO routine that analyzes, checks for stuck posts, learns, scouts, verifies, cuts, QAs, schedules, strategizes, updates the dashboard, cleans up, and reports. We're porting it from Grok Bot to Claude Code cloud agents.
 
 Current state:
 - Accounts created Nov 21. Blotato 7-day trial started Nov 21 (ends around Nov 28), with both accounts connected.
