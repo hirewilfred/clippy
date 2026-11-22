@@ -30,7 +30,7 @@ export function verify(token) {
 }
 
 export function checkPassword(pw) {
-  const real = process.env.SCHEDULER_PASSWORD || "";
+  const real = process.env.DASHBOARD_PASSWORD || process.env.SCHEDULER_PASSWORD || "";
   if (!real) return false;
   const a = crypto.createHash("sha256").update(String(pw ?? "")).digest();
   const b = crypto.createHash("sha256").update(real).digest();

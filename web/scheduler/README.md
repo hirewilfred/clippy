@@ -6,7 +6,7 @@ Deployed as the Vercel project `clippy-schedule` (root directory `web/scheduler`
 ## Environment variables (Vercel > clippy-schedule > Settings > Environment Variables)
 | Name | Required | What |
 |---|---|---|
-| `SCHEDULER_PASSWORD` | yes | The sign-in password. You choose it. |
+| `DASHBOARD_PASSWORD` | yes | The sign-in password. Use the same value as the Clippy portal (gta-click-club) so there's one password. `SCHEDULER_PASSWORD` also works. |
 | `BLOTATO_API_KEY` | yes | Blotato > Settings > API. Never commit it. |
 | `BLOTATO_TIKTOK_ACCOUNT_ID` | yes | `70702` (@clippyclubgta6) |
 | `BLOTATO_YOUTUBE_ACCOUNT_ID` | yes | `58996` (ClippyclubGTA6) |

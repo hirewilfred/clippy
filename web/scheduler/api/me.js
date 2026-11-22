@@ -5,6 +5,6 @@ export default function handler(req, res) {
     signedIn: isAuthed(req),
     live: process.env.LIVE === "true",
     blotatoConfigured: !!process.env.BLOTATO_API_KEY,
-    passwordConfigured: !!process.env.SCHEDULER_PASSWORD,
+    passwordConfigured: !!(process.env.DASHBOARD_PASSWORD || process.env.SCHEDULER_PASSWORD),
   });
 }
