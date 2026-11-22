@@ -8,9 +8,13 @@ export const WARMUP = {
     { from: 7, to: 13, cap: 6 },
     { from: 14, to: null, cap: 8 },
   ],
-  minGapMinutes: 150,
+  minGapMinutes: 120,
   maxPerHour: 2,
 };
+// "Next free slot": posts go out on these Eastern hours, every 2 hours (mirrors slots_et).
+export const SLOTS_ET = [8, 10, 12, 14, 16, 18, 20, 22];
+export const SLOT_LEAD_MINUTES = 10;   // never pick a slot closer than this to now
+export const SLOT_SEARCH_DAYS = 14;
 export const PLATFORMS = ["tiktok", "youtube"];
 export const TZ = "America/Toronto";
 export const MEDIA_HOST = "https://database.blotato.io/";

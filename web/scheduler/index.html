@@ -136,7 +136,7 @@ pre{white-space:pre-wrap;word-break:break-word;background:var(--raised);border:1
       <div class="row">
         <label class="check" for="pTik" style="flex:0 1 auto"><input id="pTik" type="checkbox" checked> <span class="chip tiktok">TikTok</span></label>
         <label class="check" for="pYt" style="flex:0 1 auto"><input id="pYt" type="checkbox" checked> <span class="chip youtube">YouTube</span></label>
-        <label for="mode">When<select id="mode"><option value="schedule">Schedule</option><option value="now">Post now</option></select></label>
+        <label for="mode">When<select id="mode"><option value="next" selected>Next free slot (every 2h)</option><option value="schedule">Pick a time</option><option value="now">Post now</option></select></label>
         <label for="when">Date and time (Eastern)<input id="when" type="datetime-local"></label>
       </div>
       <div id="gates" class="review"></div>
@@ -166,7 +166,7 @@ pre{white-space:pre-wrap;word-break:break-word;background:var(--raised);border:1
 
 <script>
 const $ = (id) => document.getElementById(id);
-const state = { file: null, duration: null, token: null, approvedPost: null, live: false };
+const state = { file: null, duration: null, token: null, approvedPost: null, live: false, nextWhen: null };
 const TZ = "America/Toronto";
 
 function toast(msg, kind = "") {
@@ -199,6 +199,7 @@ async function boot() {
   $("configBanner").hidden = me.blotatoConfigured;
   $("configBanner").textContent = "Blotato isn't connected yet: add BLOTATO_API_KEY in Vercel > clippy-schedule > Settings > Environment Variables, then redeploy.";
   if (!$("when").value) $("when").value = suggestTime();
+  $("when").disabled = $("mode").value !== "schedule";
   loadSchedule();
 }
 $("loginForm").addEventListener("submit", async (e) => {
@@ -338,15 +339,18 @@ async function runGates() {
   if (!sel.length) { box.innerHTML = '<p class="empty">Pick at least one platform.</p>'; return; }
   try {
     const post = draftPost(); if (post.attachThumb && !post.thumbUrl) post.thumbUrl = "https://database.blotato.io/pending";
-    const r = await api("/api/check", { method: "POST", body: { post, mode: $("mode").value, scheduledFor: whenValue() } });
+    const r = await api("/api/check", { method: "POST", body: { post, mode: $("mode").value, scheduledFor: whenValue(), platforms: sel } });
+    state.nextWhen = $("mode").value === "next" ? r.when : null;
+    if (state.token && !$("reviewBox").hidden) showReview();
     box.innerHTML = sel.map((p) => {
       const errs = (r.results[p] || []).filter((e) => !(e === "no video uploaded" && state.file));
       return `<div><span class="chip ${p}">${p}</span> ${errs.length ? `<ul class="errs">${errs.map((e) => `<li>${esc(e)}</li>`).join("")}</ul>` : '<span class="pill ok">ready</span>'}</div>`;
-    }).join("") + (r.note ? `<p class="small" style="color:var(--warn)">${esc(r.note)}</p>` : "");
+    }).join("") + ($("mode").value === "next" ? `<p class="small">Next free slot: <b>${r.when ? esc(fmtET(r.when)) : "none in the next 14 days"}</b></p>` : "")
+      + (r.note ? `<p class="small" style="color:var(--warn)">${esc(r.note)}</p>` : "");
   } catch (e) { box.innerHTML = `<p class="small" style="color:var(--bad)">${esc(e.message)}</p>`; }
 }
 for (const id of ["caption", "ytTitle", "ytDesc", "streamer"]) $(id).addEventListener("input", () => { voidApproval(); checkGates(); });
-for (const id of ["pTik", "pYt", "mode", "when"]) $(id).addEventListener("change", () => { $("when").disabled = $("mode").value === "now"; hideReview(); checkGates(); });
+for (const id of ["pTik", "pYt", "mode", "when"]) $(id).addEventListener("change", () => { $("when").disabled = $("mode").value !== "schedule"; hideReview(); checkGates(); });
 
 /* ---------- approve ---------- */
 function setLocked(on) {
@@ -398,14 +402,18 @@ $("approveBtn").onclick = async () => {
 };
 
 /* ---------- review + post ---------- */
+function fmtET(iso) {
+  return new Date(iso).toLocaleString("en-US", { timeZone: TZ, weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) + " ET";
+}
 function showReview() {
-  const p = state.approvedPost, sel = platforms(), now = $("mode").value === "now";
-  const when = now ? "right now" : new Date(whenValue()).toLocaleString("en-US", { timeZone: TZ, weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) + " ET";
+  const p = state.approvedPost, sel = platforms(), mode = $("mode").value, now = mode === "now";
+  const when = now ? "right now" : mode === "next" ? (state.nextWhen ? `in the next free slot, ${fmtET(state.nextWhen)}` : "in the next free slot")
+    : fmtET(whenValue());
   $("reviewLead").textContent = `Review exactly what goes out, ${when}.`;
   $("reviewCards").innerHTML = sel.map((pl) => pl === "tiktok"
     ? `<div><span class="chip tiktok">TikTok</span><pre>${esc(p.caption)}</pre></div>`
     : `<div><span class="chip youtube">YouTube</span><pre>TITLE: ${esc(p.ytTitle)}\n\n${esc(p.ytDescription)}${p.attachThumb ? "\n\n[thumbnail attached]" : ""}</pre></div>`).join("");
-  $("confirmBtn").textContent = (state.live ? (now ? "Post now" : "Schedule") : "Run dry-run") + ` · ${sel.join(" + ")}`;
+  $("confirmBtn").textContent = (state.live ? (now ? "Post now" : mode === "next" ? "Schedule next slot" : "Schedule") : "Run dry-run") + ` · ${sel.join(" + ")}`;
   $("reviewBox").hidden = false; $("result").hidden = true;
 }
 $("cancelReviewBtn").onclick = () => { hideReview(); toast("Nothing was scheduled"); };
@@ -415,7 +423,7 @@ $("confirmBtn").onclick = async () => {
   try {
     const r = await api("/api/post", { method: "POST", body: { post: state.approvedPost, token: state.token, platforms: platforms(),
       mode: $("mode").value, scheduledFor: whenValue(), confirm: true } });
-    const lines = Object.entries(r.results).map(([p, x]) => x.dryRun ? `${p}: dry-run OK (nothing sent)` : x.ok ? `${p}: ${r.when ? "scheduled" : "posting now"} ✓ (${x.postSubmissionId})` : `${p}: FAILED: ${x.error}`);
+    const lines = Object.entries(r.results).map(([p, x]) => x.dryRun ? `${p}: dry-run OK (nothing sent)` : x.ok ? `${p}: ${r.when ? `scheduled for ${fmtET(r.when)}` : "posting now"} ✓ (${x.postSubmissionId})` : `${p}: FAILED: ${x.error}`);
     $("result").textContent = lines.join("\n") + (r.live ? "" : "\n\nPayload that would be sent:\n" + JSON.stringify(Object.fromEntries(Object.entries(r.results).map(([p, x]) => [p, x.payload])), null, 2));
     $("result").hidden = false;
     const anyFail = Object.values(r.results).some((x) => x.ok === false);

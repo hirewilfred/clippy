@@ -29,18 +29,18 @@
       "cap": 8
     }
   ],
-  "min_gap_minutes": 150,
+  "min_gap_minutes": 120,
   "max_posts_per_hour": 2,
   "profile_edit_quarantine_minutes": 120,
   "slots_et": [
-    "04:30",
-    "07:30",
-    "10:30",
-    "13:00",
-    "15:30",
+    "08:00",
+    "10:00",
+    "12:00",
+    "14:00",
+    "16:00",
     "18:00",
-    "20:30",
-    "02:00"
+    "20:00",
+    "22:00"
   ],
   "jitter_minutes": 20
 }
