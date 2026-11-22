@@ -1,6 +1,6 @@
 import { guard, run, body } from "../lib/http.js";
 import { verify } from "../lib/auth.js";
-import { cleanPost, contentErrors, cadenceErrors, lockHash, buildPayload, resolveWhen } from "../lib/gates.js";
+import { cleanPost, contentErrors, cadenceErrors, lockHash, buildPayload, resolveWhen, nextSlot } from "../lib/gates.js";
 import { listSchedules, createPost, accountId } from "../lib/blotato.js";
 import { PLATFORMS } from "../lib/config.js";
 
@@ -18,11 +18,17 @@ export default async function handler(req, res) {
     if (Date.now() - Date.parse(a.at) > APPROVAL_TTL_MS) return res.status(403).json({ error: "Approval expired (24h). Approve again." });
     const platforms = [...new Set(Array.isArray(b.platforms) ? b.platforms : [])].filter((p) => PLATFORMS.includes(p));
     if (!platforms.length) return res.status(400).json({ error: "Pick at least one platform" });
-    const mode = b.mode === "now" ? "now" : "schedule";
-    const when = resolveWhen(mode, b.scheduledFor);
-    if (mode === "schedule" && when.getTime() < Date.now() + 2 * 60_000) return res.status(400).json({ error: "Schedule at least 2 minutes ahead, or use Post now" });
-
+    const mode = b.mode === "now" ? "now" : b.mode === "schedule" ? "schedule" : "next";
     const scheduled = await listSchedules();
+    let when;
+    if (mode === "next") {
+      when = nextSlot(platforms, scheduled);
+      if (!when) return res.status(422).json({ error: "No free 2-hour slot in the next 14 days (warm-up caps are full)" });
+    } else {
+      when = resolveWhen(mode, b.scheduledFor);
+      if (mode === "schedule" && when.getTime() < Date.now() + 2 * 60_000) return res.status(400).json({ error: "Schedule at least 2 minutes ahead, or use Post now" });
+    }
+
     const errors = Object.fromEntries(platforms.map((p) => [p, [...contentErrors(post, p), ...cadenceErrors(p, when, scheduled)]]));
     if (Object.values(errors).some((e) => e.length)) return res.status(422).json({ error: "Blocked by posting rules", errors });
 

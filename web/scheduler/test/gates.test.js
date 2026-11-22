@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { contentErrors, cadenceErrors, dailyCap, lockHash, buildPayload, cleanPost } from "../lib/gates.js";
+import { contentErrors, cadenceErrors, dailyCap, lockHash, buildPayload, cleanPost, nextSlot } from "../lib/gates.js";
 
 const base = () => cleanPost({
   mediaUrl: "https://database.blotato.io/x.mp4", streamer: "@HutchMF", durationSec: 15.6,
@@ -67,10 +67,10 @@ test("cadence: gap, daily cap, other platform ignored", () => {
   assert.ok(cadenceErrors("tiktok", at("2026-11-22T08:00:00Z"), sched, now).some((e) => e.includes("within")));     // 1.5h before 4:30
   assert.deepEqual(cadenceErrors("youtube", at("2026-11-22T22:00:00Z"), sched, now), []);
   assert.ok(cadenceErrors("tiktok", at("2026-11-21T20:00:00Z"), [], now).some((e) => e.includes("past")));
-  // 7:45 PM and 10:00 PM are 2h15m apart: blocked; 10:15 PM passes
+  // 2 h minimum gap: 7:45 PM then 9:30 PM (1h45m) is blocked; 9:45 PM (exactly 2 h) passes
   const tonight = [{ platform: "youtube", scheduledAt: "2026-11-22T00:45:00Z" }];
-  assert.ok(cadenceErrors("youtube", at("2026-11-22T03:00:00Z"), tonight, now).some((e) => e.includes("within")));
-  assert.deepEqual(cadenceErrors("youtube", at("2026-11-22T03:15:00Z"), tonight, now), []);
+  assert.ok(cadenceErrors("youtube", at("2026-11-22T02:30:00Z"), tonight, now).some((e) => e.includes("within")));
+  assert.deepEqual(cadenceErrors("youtube", at("2026-11-22T02:45:00Z"), tonight, now), []);
 });
 
 test("lock hash changes with any locked field", () => {
@@ -93,4 +93,23 @@ test("payloads match Blotato v2 and put scheduledTime at the root", () => {
   assert.equal(y.post.target.thumbnailUrl, "https://database.blotato.io/t.jpg");
   assert.equal(y.post.content.text, base().ytDescription);
   assert.equal(buildPayload("youtube", base(), "1", null).post.target.thumbnailUrl, undefined);
+});
+
+test("nextSlot: even Eastern hours, 2 h apart, respects caps", () => {
+  const sch = (iso, platform = "tiktok") => ({ platform, scheduledAt: iso });
+  // Sun Nov 22 2026, 11:20 AM ET (EST = UTC-5). Day 2 cap is 2 per platform.
+  const now = at("2026-11-22T16:20:00Z");
+  assert.equal(nextSlot(["tiktok"], [], now).toISOString(), "2026-11-22T17:00:00.000Z");            // 12:00 PM ET
+  // 12:00 PM taken -> 2:00 PM (exactly 2 h later is allowed)
+  assert.equal(nextSlot(["tiktok"], [sch("2026-11-22T17:00:00Z")], now).toISOString(), "2026-11-22T19:00:00.000Z");
+  // 12:00 and 2:00 PM taken -> day 2 cap (2) is full -> next day 8:00 AM ET
+  const two = [sch("2026-11-22T17:00:00Z"), sch("2026-11-22T19:00:00Z")];
+  assert.equal(nextSlot(["tiktok"], two, now).toISOString(), "2026-11-23T13:00:00.000Z");
+  // YouTube is free, but both platforms together must share one slot
+  assert.equal(nextSlot(["youtube"], two, now).toISOString(), "2026-11-22T17:00:00.000Z");
+  assert.equal(nextSlot(["tiktok", "youtube"], two, now).toISOString(), "2026-11-23T13:00:00.000Z");
+  // 11:55 AM: the 12:00 slot is inside the 10-minute lead, so 2:00 PM
+  assert.equal(nextSlot(["tiktok"], [], at("2026-11-22T16:55:00Z")).toISOString(), "2026-11-22T19:00:00.000Z");
+  // 11 PM: next slot is 8:00 AM tomorrow, never overnight
+  assert.equal(nextSlot(["tiktok"], [], at("2026-11-23T04:00:00Z")).toISOString(), "2026-11-23T13:00:00.000Z");
 });

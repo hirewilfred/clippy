@@ -24,7 +24,7 @@ Choose clip, fill text, generate thumbnail, pick platforms and time. Live gate c
 
 ## Rules enforced server-side
 Same as `scripts/gates.py`: credit line, 3-5 hashtags, banned words, no question/em dash, max 1 emoji, 1-6 word caption line,
-YouTube title of 60 characters or fewer, credit and Rockstar disclaimer, clip length 12-20 s, warm-up daily cap (Eastern days), 2.5 h gap, max 2/hour,
+YouTube title of 60 characters or fewer, credit and Rockstar disclaimer, clip length 12-20 s, warm-up daily cap (Eastern days), 2 h gap (one post every 2 hours), max 2/hour,
 blocked streamers and paused platforms. Cadence counts the posts currently scheduled in Blotato; already-published posts
 are not visible to it.
 

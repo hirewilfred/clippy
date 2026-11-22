@@ -1,6 +1,6 @@
 // Posting rules. Port of scripts/gates.py (same rules, same messages where possible).
 import crypto from "node:crypto";
-import { WARMUP, TZ, MEDIA_HOST, PLATFORMS } from "./config.js";
+import { WARMUP, TZ, MEDIA_HOST, PLATFORMS, SLOTS_ET, SLOT_LEAD_MINUTES, SLOT_SEARCH_DAYS } from "./config.js";
 
 export const BANNED = ["official", "leak", "early access", "free copy", "giveaway"];
 const CREDIT_RE = /^Credit: @[A-Za-z0-9_]{2,25} \((Twitch|Kick|YouTube)\)$/m;
@@ -126,8 +126,32 @@ export function buildPayload(platform, post, accountId, scheduledFor) {
   return body;
 }
 
+const etHourFmt = new Intl.DateTimeFormat("en-US", { timeZone: TZ, hour: "numeric", minute: "numeric", hourCycle: "h23" });
+function etHourMinute(d) {
+  const parts = Object.fromEntries(etHourFmt.formatToParts(d).map((x) => [x.type, x.value]));
+  return [Number(parts.hour), Number(parts.minute)];
+}
+
+/**
+ * Earliest Eastern slot (SLOTS_ET, every 2 h) at least SLOT_LEAD_MINUTES from now that passes
+ * cadenceErrors (daily warm-up cap, 2 h gap, max per hour) for every platform. null if none in range.
+ */
+export function nextSlot(platforms, scheduled, now = new Date()) {
+  const from = now.getTime() + SLOT_LEAD_MINUTES * 60_000;
+  let t = Math.ceil(from / 3_600_000) * 3_600_000;           // next whole hour (ET offsets are whole hours)
+  const end = from + SLOT_SEARCH_DAYS * 864e5;
+  for (; t <= end; t += 3_600_000) {
+    const d = new Date(t);
+    const [h, m] = etHourMinute(d);
+    if (m !== 0 || !SLOTS_ET.includes(h)) continue;
+    if (platforms.every((p) => cadenceErrors(p, d, scheduled, now).length === 0)) return d;
+  }
+  return null;
+}
+
 export function resolveWhen(mode, scheduledFor) {
   if (mode === "now") return new Date();
+  if (mode === "next") throw Object.assign(new Error("next slot is resolved by the server"), { status: 500 });
   const d = new Date(String(scheduledFor || ""));
   if (Number.isNaN(+d)) throw Object.assign(new Error("Pick a valid date and time"), { status: 400 });
   return d;
