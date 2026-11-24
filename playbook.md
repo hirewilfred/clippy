@@ -10,6 +10,7 @@ Adapted from the "Faceless Clipping Page Run by Grok Bot" system (AI Automation 
 2. **HEALTH CHECK.** Per platform: any post under 20 plays 1 hour after going live is **stuck**. Confirm every scheduled post actually went live. Two stuck in a row on one platform: pause that platform for 24 hours and alert the human. Both platforms stuck: pause everything and alert immediately, even overnight. No posting within 2 hours of a profile edit.
 3. **LEARN.** Pick one question the latest data raised. Research it with primary sources first (platform blogs, help centers, official statements, papers). Mark anything unconfirmed as UNVERIFIED. Write the finding and what we'll change in `tracking/learning.md`, with the date.
 4. **SCOUT.** Pull the top GTA 6 clips from the last 3–24 hours (Twitch Helix, English, sorted by views). Build a contact sheet for each candidate. Never trust titles. Expect to reject 90% or more.
+   - For retainer streamers, also mine their latest VOD: `scripts.vod` (one ≤30 min section) → `scripts.moments --cut`. Moments are candidates only; they go through VERIFY like any clip.
 5. **VERIFY.** Each source needs all of these:
    - created within 24 hours;
    - visually GTA 6, with a **proof frame** saved (new HUD, Lucia or Jason, the Vice City skyline). The category tag is not proof, because GTA V is often streamed under the GTA 6 category;

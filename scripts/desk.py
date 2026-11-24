@@ -30,7 +30,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, quote, urlparse
 from zoneinfo import ZoneInfo
 
-from scripts import gates, publish, thumb
+from scripts import gates, postiz, publish, thumb
 from scripts.clip import probe
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -248,7 +248,8 @@ def status_pill(item: dict) -> str:
     posts = item.get("posts", {})
     live = [p for p in posts.values() if not p.get("dry_run") and p.get("status") not in ("failed", "cancelled")]
     if live:
-        return "<span class='pill ok'>sent to Blotato</span>"
+        names = sorted({(p.get("backend") or "blotato").capitalize() for p in live})
+        return f"<span class='pill ok'>sent to {esc(', '.join(names))}</span>"
     st = approval_state(item)
     return {"valid": "<span class='pill ok'>approved</span>", "stale": "<span class='pill warn'>approval void (edited)</span>",
             "none": "<span class='pill muted'>draft</span>"}[st]
@@ -403,7 +404,7 @@ def do_post(iid: str, platforms: list[str], mode: str, when_s: str) -> str:
         thumb_path = d / item["thumbs"]["landscape"] if plat == "youtube" and item.get("thumbs") else None
         try:
             res = publish.publish(req, d / "clip.mp4", thumb_path, live=live, post_now=(mode == "now"))
-        except (publish.PublishRefused, publish.BlotatoError) as e:
+        except (publish.PublishRefused, publish.PublisherError) as e:
             item["posts"][plat] = {"status": "failed", "error": str(e), "dry_run": not live,
                                    "scheduled_for": when.isoformat()}
             log(item, f"{plat}: FAILED {e}")
@@ -412,13 +413,14 @@ def do_post(iid: str, platforms: list[str], mode: str, when_s: str) -> str:
         item["posts"][plat] = {
             "status": ("dry-run" if res["dry_run"] else ("scheduled" if mode == "schedule" else "submitted")),
             "dry_run": res["dry_run"], "scheduled_for": when.isoformat(),
-            "postSubmissionId": res.get("postSubmissionId"),
+            "postSubmissionId": res.get("postSubmissionId"), "backend": res.get("backend", "blotato"),
         }
+        via = res.get("backend", "blotato").capitalize()
         if res["dry_run"]:
             item["posts"][plat]["payload"] = res["payload"]
-        log(item, f"{plat}: {'dry-run OK' if res['dry_run'] else 'sent to Blotato ' + str(res.get('postSubmissionId'))}"
+        log(item, f"{plat}: {'dry-run OK' if res['dry_run'] else f'sent to {via} ' + str(res.get('postSubmissionId'))}"
                   f" for {'now' if mode == 'now' else when.isoformat()}")
-        msgs.append(f"{plat}: {'dry-run OK (nothing posted)' if res['dry_run'] else 'sent to Blotato'}")
+        msgs.append(f"{plat}: {'dry-run OK (nothing posted)' if res['dry_run'] else f'sent to {via}'}")
     save(item)
     return " · ".join(msgs)
 
@@ -540,7 +542,17 @@ class Handler(BaseHTTPRequestHandler):
             if action == "refresh":
                 plat = get("platform")
                 p = item["posts"].get(plat) or {}
-                if p.get("postSubmissionId"):
+                if p.get("postSubmissionId") and p.get("backend") == "postiz":
+                    r = postiz.Postiz().find_post(p["postSubmissionId"], datetime.fromisoformat(p["scheduled_for"]))
+                    if r:
+                        p["status"] = postiz.STATE_MAP.get(r.get("state"), p.get("status"))
+                        if r.get("releaseURL"):
+                            p["live_url"] = r["releaseURL"]
+                        if r.get("error"):
+                            p["error"] = r["error"]
+                    log(item, f"{plat}: status {p['status']}")
+                    save(item)
+                elif p.get("postSubmissionId"):
                     r = publish.Blotato().post_status(p["postSubmissionId"])
                     p["status"] = r.get("status", p.get("status"))
                     if r.get("publicUrl"):
@@ -554,9 +566,12 @@ class Handler(BaseHTTPRequestHandler):
                 plat = get("platform")
                 if plat in item["posts"]:
                     item["posts"][plat]["status"] = "cancelled"
-                    log(item, f"{plat}: marked cancelled (cancel it in Blotato's Scheduled view too)")
+                    via = (item["posts"][plat].get("backend") or "blotato").capitalize()
+                    log(item, f"{plat}: marked cancelled (cancel it in {via}'s scheduled view too)")
                     save(item)
-                return self._redirect(f"/item/{iid}?msg={quote('Marked cancelled here. Also delete it in Blotato > Scheduled.')}")
+                else:
+                    via = "Blotato"
+                return self._redirect(f"/item/{iid}?msg={quote(f'Marked cancelled here. Also delete it in {via}.')}")
             return self._send(404, page("Not found", "<p>Unknown action.</p>"))
         except (ValueError, KeyError) as e:
             return self._redirect(f"/?msg={quote(str(e))}")

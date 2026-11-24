@@ -83,7 +83,7 @@ def test_live_flow_with_fake_http(monkeypatch, tmp_path):
 
     client = Blotato(api_key="k", opener=opener)
     res = publish.publish(make(), vid, live=True, client=client, warmup=WARMUP)
-    assert res == {"dry_run": False, "platform": "youtube", "postSubmissionId": "ps_1",
+    assert res == {"dry_run": False, "backend": "blotato", "platform": "youtube", "postSubmissionId": "ps_1",
                    "scheduledTime": "2026-11-22T18:00:00Z"}
     post = [c for c in calls if c[1].endswith("/posts")][0]
     body = json.loads(post[3])

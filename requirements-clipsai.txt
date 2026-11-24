@@ -1,0 +1,8 @@
+# Optional: ClipsAI moment finder for scripts/moments.py (--detector clipsai|both).
+# Heavy (torch, pyannote, WhisperX: several GB). Unmaintained since Jan 2024.
+# Does NOT install on Python 3.12+ (facenet-pytorch pins Pillow<10.3). Use a Python 3.10/3.11 venv:
+#   python3.11 -m venv .venv-clipsai && . .venv-clipsai/bin/activate
+#   pip install -r requirements.txt -r requirements-clipsai.txt
+# Also needs libmagic (apt-get install -y libmagic1) and ffmpeg.
+clipsai==0.2.1
+whisperx @ git+https://github.com/m-bain/whisperx.git

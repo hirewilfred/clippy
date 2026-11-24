@@ -12,6 +12,9 @@ Blotato REST API v2 (help.blotato.com/rest-api-reference):
   status        GET  /v2/posts/{postSubmissionId} -> status in-progress|scheduled|published|failed
   cancel        DELETE /v2/schedules/{id}
 The API key is read from BLOTATO_API_KEY and never printed.
+
+Backends: PUBLISHER=blotato (default) or PUBLISHER=postiz (scripts/postiz.py).
+The gates run first and are identical for both; only the transport differs.
 """
 from __future__ import annotations
 
@@ -23,18 +26,33 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
+from scripts import postiz
 from scripts.gates import PostRequest, check
 
 BASE = "https://backend.blotato.com/v2"
 HANDLE = "clippyclubgta6"
 
 
+BACKENDS = ("blotato", "postiz")
+
+
 class PublishRefused(RuntimeError):
     pass
 
 
-class BlotatoError(RuntimeError):
+class PublisherError(RuntimeError):
+    """Any transport failure, whichever backend is in use."""
+
+
+class BlotatoError(PublisherError):
     pass
+
+
+def backend_name(explicit: str | None = None) -> str:
+    name = (explicit or os.environ.get("PUBLISHER") or "blotato").strip().lower()
+    if name not in BACKENDS:
+        raise PublishRefused(f"unknown PUBLISHER {name!r} (use one of {', '.join(BACKENDS)})")
+    return name
 
 
 # ---------------------------------------------------------------- payloads (pure)
@@ -146,23 +164,49 @@ class Blotato:
 # ---------------------------------------------------------------- publish
 
 def publish(req: PostRequest, video_path: str | Path, thumb_path: str | Path | None = None,
-            live: bool = False, client: Blotato | None = None, warmup: dict | None = None,
-            post_now: bool = False) -> dict:
+            live: bool = False, client=None, warmup: dict | None = None,
+            post_now: bool = False, backend: str | None = None) -> dict:
     """Gate, then dry-run or post. Returns a result dict; raises PublishRefused on gate failure."""
+    name = backend_name(backend)
     req.live = live
     errs = check(req, live_env=os.environ.get("LIVE"), warmup=warmup)
     if errs:
         raise PublishRefused("; ".join(errs))
     when = None if post_now else req.scheduled_for
+    yt_thumb = bool(thumb_path) and req.platform == "youtube"
+    if name == "postiz":
+        return _publish_postiz(req, video_path, thumb_path if yt_thumb else None, live, client, when)
     if not live:
         body = build_payload(req.platform, req.clip, "<account id>", "<uploaded video url>", when,
-                             "<uploaded thumbnail url>" if thumb_path and req.platform == "youtube" else None)
-        return {"dry_run": True, "platform": req.platform, "payload": body}
+                             "<uploaded thumbnail url>" if yt_thumb else None)
+        return {"dry_run": True, "backend": name, "platform": req.platform, "payload": body}
     client = client or Blotato()
     account = client.account_id(req.platform)
     media_url = client.upload(video_path)
-    thumb_url = client.upload(thumb_path) if thumb_path and req.platform == "youtube" else None
+    thumb_url = client.upload(thumb_path) if yt_thumb else None
     body = build_payload(req.platform, req.clip, account, media_url, when, thumb_url)
     res = client.create_post(body)
-    return {"dry_run": False, "platform": req.platform, "postSubmissionId": res.get("postSubmissionId"),
-            "scheduledTime": res.get("scheduledTime")}
+    return {"dry_run": False, "backend": name, "platform": req.platform,
+            "postSubmissionId": res.get("postSubmissionId"), "scheduledTime": res.get("scheduledTime")}
+
+
+def _publish_postiz(req: PostRequest, video_path, thumb_path, live: bool, client, when) -> dict:
+    if not live:
+        body = postiz.build_payload(req.platform, req.clip, "<integration id>",
+                                    {"id": "<upload id>", "path": "<uploaded video url>"}, when,
+                                    {"id": "<upload id>", "path": "<uploaded thumbnail url>"} if thumb_path else None)
+        return {"dry_run": True, "backend": "postiz", "platform": req.platform, "payload": body}
+    client = client or postiz.Postiz()
+    try:
+        integration = client.integration_id(req.platform)
+        media = client.upload(video_path)
+        thumb = client.upload(thumb_path) if thumb_path else None
+        body = postiz.build_payload(req.platform, req.clip, integration, media, when, thumb)
+        res = client.create_post(body)
+    except postiz.PostizError as e:
+        raise PublisherError(f"postiz: {e}") from None
+    post_id = next((r.get("postId") for r in res if r.get("postId")), None)
+    if not post_id:
+        raise PublisherError("postiz: create-post returned no postId")
+    return {"dry_run": False, "backend": "postiz", "platform": req.platform,
+            "postSubmissionId": post_id, "scheduledTime": body["date"] if when else None}
