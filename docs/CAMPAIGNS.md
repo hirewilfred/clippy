@@ -6,7 +6,7 @@ Campaigns are the second revenue engine, after streamer retainers (see HANDOFF.m
 | Campaign | Config | Status |
 |---|---|---|
 | ClipFarm x Funko x TheBurntPeanut | `config/campaigns/clipfarm-funko-burntpeanut.json` | joined |
-| Dasgasd3m (Dom) GTA 6 clips, Content Rewards | `config/campaigns/contentrewards-dasgasd3m.json` | pending_join: $2.00/1K, $150 max per clip, $1,000 budget, TikTok + Shorts. Normal GTA 6 clips of Dom with the usual credit line. Brief not re-read (Content Rewards is blocked from the cloud session). |
+| Dasgasd3m (Dom) GTA 6 clips, Content Rewards | `config/campaigns/contentrewards-dasgasd3m.json` | ended: submissions closed before we joined (Nov 25) |
 
 `python -m scripts.campaign report --fetch` runs every campaign that isn't `ended`.
 

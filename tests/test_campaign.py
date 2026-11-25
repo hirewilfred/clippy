@@ -193,7 +193,8 @@ def test_rms_series_on_real_audio(tmp_path):
 
 def test_every_campaign_config_loads_and_has_paths():
     ids = c.campaign_ids()
-    assert "clipfarm-funko-burntpeanut" in ids and "contentrewards-dasgasd3m" in ids
+    assert "clipfarm-funko-burntpeanut" in ids and "contentrewards-dasgasd3m" not in ids
+    assert "contentrewards-dasgasd3m" in c.campaign_ids(include_ended=True)
     for cid in ids:
         cfg = c.load_campaign(cid)
         assert c.ledger_path(cfg).name.endswith(".csv")
@@ -211,9 +212,9 @@ def test_dom_campaign_math_and_caption():
     assert any("@dasgasd3m" in e for e in c.check_caption(ok.replace("@dasgasd3m", "@someone"), "tiktok", dom))
 
 
-def test_pending_campaign_report_says_so():
+def test_ended_campaign_report_says_so():
     dom = c.load_campaign("contentrewards-dasgasd3m")
-    assert "pending_join" in c.report([], dom, NOW)
+    assert "ended" in c.report([], dom, NOW)
 
 
 def test_report_cli_runs_every_campaign(tmp_path, monkeypatch, capsys):
@@ -221,4 +222,4 @@ def test_report_cli_runs_every_campaign(tmp_path, monkeypatch, capsys):
     (tmp_path / "tracking" / "campaigns").mkdir(parents=True)
     assert c.main(["report"]) == 0
     out = capsys.readouterr().out
-    assert "Funko" in out and "Dom" in out
+    assert "Funko" in out and "Dom" not in out
