@@ -60,6 +60,23 @@ def load_campaign(cid: str = DEFAULT_CAMPAIGN) -> dict:
     return json.loads((CAMPAIGN_DIR / f"{cid}.json").read_text())
 
 
+def campaign_ids(include_ended: bool = False) -> list[str]:
+    """Every campaign config, skipping ended ones unless asked."""
+    out = []
+    for f in sorted(CAMPAIGN_DIR.glob("*.json")):
+        if include_ended or json.loads(f.read_text()).get("status") != "ended":
+            out.append(f.stem)
+    return out
+
+
+def ledger_path(cfg: dict) -> Path:
+    return ROOT / cfg["ledger"] if cfg.get("ledger") else LEDGER
+
+
+def report_path(cfg: dict) -> Path:
+    return ROOT / cfg["report"] if cfg.get("report") else REPORT
+
+
 def terms(cfg: dict, platform: str) -> dict:
     p = cfg["platforms"].get(platform)
     if not p:
@@ -111,18 +128,22 @@ def check_caption(caption: str, platform: str, cfg: dict, prior_hashes: set[str]
     t = terms(cfg, platform)
     if not caption.strip():
         return ["caption is empty"]
-    if cfg["funko_line"] not in caption:
+    if cfg.get("funko_line") and cfg["funko_line"] not in caption:
         errs.append("missing Funko's caption line (must be copied exactly)")
+    if cfg.get("required_caption_text") and cfg["required_caption_text"] not in caption:
+        errs.append(f"missing required caption text '{cfg['required_caption_text']}'")
     low = caption.lower()
-    for tag in t["required_tags"]:
+    for tag in t.get("required_tags", []):
         if not re.search(rf"(?<!\w){re.escape(tag.lower())}(?!\w)", low):
             errs.append(f"missing required tag {tag} for {platform}")
-    wrong = {"youtube": "@funko", "tiktok": "@originalfunko", "instagram": "@originalfunko"}[platform]
-    if re.search(rf"(?<!\w){wrong}(?!\w)", low):
-        errs.append(f"wrong Funko handle {wrong} for {platform}")
-    for price in PRICE_RE.findall(caption):
-        if price not in cfg["allowed_prices"]:
-            errs.append(f"price ${price} is not an allowed fact (only $14.99)")
+    for wrong in t.get("forbidden_tags", []):
+        if re.search(rf"(?<!\w){re.escape(wrong.lower())}(?!\w)", low):
+            errs.append(f"wrong handle {wrong} for {platform}")
+    if "allowed_prices" in cfg:
+        for price in PRICE_RE.findall(caption):
+            if price not in cfg["allowed_prices"]:
+                allowed = ", ".join("$" + x for x in cfg["allowed_prices"]) or "none"
+                errs.append(f"price ${price} is not an allowed fact (allowed: {allowed})")
     m = INVENTED_FACT_RE.search(caption)
     if m:
         errs.append(f"possible made-up stock/drop/time claim: '{m.group(0)}'")
@@ -244,6 +265,7 @@ def report(rows: list[dict], cfg: dict, now: datetime) -> str:
     submit = [x for x in res if x[1]["action"] == "SUBMIT NOW"]
     pending = sum(c["est_usd"] for r, c in res if c["status"] in ("SUBMIT", "MAXED_SUBMIT", "SUBMITTED", "MAXED"))
     L = [f"# {cfg['name']}: payout watch", "",
+         *([f"**Status: {cfg['status']}.** {cfg.get('status_note', '')}".rstrip(), ""] if cfg.get("status") not in (None, "joined", "active") else []),
          f"Run {now.astimezone(timezone.utc):%Y-%m-%d %H:%M} UTC. Estimates only; ClipFarm decides the payout.", "",
          f"- Posts tracked: {len(rows)}",
          f"- Ready to submit: **{len(submit)}**",
@@ -346,11 +368,33 @@ def _pct(x: float | None) -> str:
     return "" if x is None else f"{x:.2%}"
 
 
+def run_report(cfg: dict, ledger: Path, out: Path, fetch: bool) -> int:
+    rows = read_ledger(ledger)
+    if fetch:
+        for row in rows:
+            if not row.get("url") or (row.get("status") or "").lower() in ("deleted", "removed"):
+                continue
+            s = fetch_stats(row["url"])
+            if s is None:
+                print(f"stats unavailable: {row['url']} (enter them by hand)", file=sys.stderr)
+                continue
+            for k, v in s.items():
+                if v is not None:
+                    row[k] = v
+        write_ledger(rows, ledger)
+    now = datetime.now(timezone.utc)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(report(rows, cfg, now))
+    n = sum(1 for r in rows if classify(r, cfg, now)["action"] == "SUBMIT NOW")
+    print(f"{cfg['name']}: {n} post(s) ready to submit -> {out.relative_to(ROOT) if out.is_relative_to(ROOT) else out}")
+    return n
+
+
 # ---------------------------------------------------------------- CLI
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Paid clipping campaign: money math, gates, payout watch.")
-    ap.add_argument("--campaign", default=DEFAULT_CAMPAIGN)
+    ap.add_argument("--campaign", help=f"campaign id (default: {DEFAULT_CAMPAIGN}; for report: every campaign not ended)")
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("payout")
     p.add_argument("--views", type=int, required=True)
@@ -363,11 +407,19 @@ def main(argv=None) -> int:
     e.add_argument("spec")
     r = sub.add_parser("report")
     r.add_argument("--fetch", action="store_true", help="refresh public stats with yt-dlp and save them to the ledger")
-    r.add_argument("--ledger", default=str(LEDGER))
-    r.add_argument("--out", default=str(REPORT))
+    r.add_argument("--ledger", help="ledger CSV (single campaign only; default from the campaign config)")
+    r.add_argument("--out", help="report path (single campaign only; default from the campaign config)")
     a = ap.parse_args(argv)
-    cfg = load_campaign(a.campaign)
-    rows = read_ledger(Path(getattr(a, "ledger", LEDGER)))
+    if a.cmd == "report":
+        ids = [a.campaign] if a.campaign else campaign_ids()
+        for cid in ids:
+            c_cfg = load_campaign(cid)
+            ledger = Path(a.ledger) if a.ledger and len(ids) == 1 else ledger_path(c_cfg)
+            out = Path(a.out) if a.out and len(ids) == 1 else report_path(c_cfg)
+            run_report(c_cfg, ledger, out, a.fetch)
+        return 0
+    cfg = load_campaign(a.campaign or DEFAULT_CAMPAIGN)
+    rows = read_ledger(ledger_path(cfg))
 
     if a.cmd == "payout":
         t = terms(cfg, a.platform)
@@ -377,26 +429,8 @@ def main(argv=None) -> int:
     if a.cmd == "check-caption":
         errs = check_caption(Path(a.file).read_text(), a.platform, cfg,
                              {r["caption_sha256"] for r in rows if r.get("caption_sha256")}, a.disclosure_toggle)
-    elif a.cmd == "check-edit":
-        errs = check_edit(json.loads(Path(a.spec).read_text()), cfg, {_norm(r["hook"]) for r in rows if r.get("hook")})
     else:
-        if a.fetch:
-            for row in rows:
-                if not row.get("url") or (row.get("status") or "").lower() in ("deleted", "removed"):
-                    continue
-                s = fetch_stats(row["url"])
-                if s is None:
-                    print(f"stats unavailable: {row['url']} (enter them by hand)", file=sys.stderr)
-                    continue
-                for k, v in s.items():
-                    if v is not None:
-                        row[k] = v
-            write_ledger(rows, Path(a.ledger))
-        text = report(rows, cfg, datetime.now(timezone.utc))
-        Path(a.out).write_text(text)
-        n = sum(1 for r in rows if classify(r, cfg, datetime.now(timezone.utc))["action"] == "SUBMIT NOW")
-        print(f"{n} post(s) ready to submit -> {a.out}")
-        return 0
+        errs = check_edit(json.loads(Path(a.spec).read_text()), cfg, {_norm(r["hook"]) for r in rows if r.get("hook")})
     for x in errs:
         print(f"FAIL: {x}")
     print("OK" if not errs else f"{len(errs)} problem(s)")

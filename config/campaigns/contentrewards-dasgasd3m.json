@@ -1,0 +1,47 @@
+{
+  "_comment": "Content Rewards campaign, details from the portal's Campaign Finder (checked 2026-11-21). Content Rewards is blocked from the cloud session, so the brief has NOT been re-read: confirm min payout, engagement and caption rules on the campaign page after joining, then update this file.",
+  "id": "contentrewards-dasgasd3m",
+  "name": "Dasgasd3m (Dom) GTA 6 clips",
+  "network": "Content Rewards (run by Ruckus)",
+  "url": "https://contentrewards.com/c/campaigns/051002dd-5c46-43d0-a446-43f2957ba3a9",
+  "status": "pending_join",
+  "status_note": "Owner to join on Content Rewards, then set status to \"joined\".",
+  "streamer": "dasgasd3m",
+  "budget_total_usd": 1000,
+  "budget_remaining_usd": 1000,
+  "budget_checked_at": "2026-11-21",
+  "platforms": {
+    "tiktok": {
+      "cpm_usd": 2.0,
+      "min_payout_usd": 0.0,
+      "max_payout_usd": 150.0,
+      "required_tags": [
+        "@dasgasd3m"
+      ]
+    },
+    "youtube": {
+      "cpm_usd": 2.0,
+      "min_payout_usd": 0.0,
+      "max_payout_usd": 150.0,
+      "required_tags": [
+        "@dasgasd3m"
+      ]
+    }
+  },
+  "_unverified": "min_payout_usd and min_engagement_rate are placeholders until the brief is read.",
+  "min_engagement_rate": 0.0,
+  "keep_up_days": 30,
+  "tier1_countries": [
+    "US",
+    "GB",
+    "CA",
+    "AU"
+  ],
+  "tier1_min_share": 0.0,
+  "rules": "Clip Dom's funny GTA 6 moments. Posting account must be a GTA 6 account (ours is).",
+  "require_disclosure": false,
+  "footage_only": false,
+  "ledger": "tracking/campaigns/dasgasd3m.csv",
+  "report": "tracking/campaigns/dasgasd3m-report.md",
+  "submit_where": "Content Rewards campaign page > submit post link."
+}

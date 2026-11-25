@@ -44,7 +44,7 @@ def test_caption_needs_funko_line_and_tags():
 
 def test_caption_wrong_funko_handle_per_platform():
     assert any("@OriginalFunko" in e for e in c.check_caption(caption("tiktok"), "youtube", CFG))
-    assert any("wrong Funko handle" in e for e in c.check_caption(caption("youtube"), "tiktok", CFG))
+    assert any("wrong handle @OriginalFunko" in e for e in c.check_caption(caption("youtube"), "tiktok", CFG))
 
 
 def test_caption_rejects_made_up_facts():
@@ -187,3 +187,38 @@ def test_rms_series_on_real_audio(tmp_path):
     subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-f", "lavfi", "-i", "sine=f=440:d=3", str(f)], check=True)
     vals = m.rms_series(f)
     assert 5 <= len(vals) <= 7 and max(vals) > -30
+
+
+# ---------------------------------------------------------------- multi-campaign
+
+def test_every_campaign_config_loads_and_has_paths():
+    ids = c.campaign_ids()
+    assert "clipfarm-funko-burntpeanut" in ids and "contentrewards-dasgasd3m" in ids
+    for cid in ids:
+        cfg = c.load_campaign(cid)
+        assert c.ledger_path(cfg).name.endswith(".csv")
+        for p in cfg["platforms"]:
+            c.terms(cfg, p)
+
+
+def test_dom_campaign_math_and_caption():
+    dom = c.load_campaign("contentrewards-dasgasd3m")
+    t = c.terms(dom, "tiktok")
+    assert c.est_payout(10_000, t) == 20.0
+    assert c.est_payout(1_000_000, t) == 150.0
+    ok = "dom sent it off the pier\n\nCredit: @dasgasd3m (Twitch)\n\n#gta6 #dasgasd3m #gaming"
+    assert c.check_caption(ok, "tiktok", dom) == []
+    assert any("@dasgasd3m" in e for e in c.check_caption(ok.replace("@dasgasd3m", "@someone"), "tiktok", dom))
+
+
+def test_pending_campaign_report_says_so():
+    dom = c.load_campaign("contentrewards-dasgasd3m")
+    assert "pending_join" in c.report([], dom, NOW)
+
+
+def test_report_cli_runs_every_campaign(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(c, "ROOT", tmp_path)
+    (tmp_path / "tracking" / "campaigns").mkdir(parents=True)
+    assert c.main(["report"]) == 0
+    out = capsys.readouterr().out
+    assert "Funko" in out and "Dom" in out
