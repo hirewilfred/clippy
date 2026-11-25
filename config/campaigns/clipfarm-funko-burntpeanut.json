@@ -1,0 +1,38 @@
+{
+  "_comment": "Terms copied from the ClipFarm x Funko x TheBurntPeanut brief and the Whop campaign page (seen 2026-11-25). Re-check the Whop page before each run: budget and terms can change. Never put Whop/Discord credentials here.",
+  "id": "clipfarm-funko-burntpeanut",
+  "name": "TheBurntPeanut x Funko Pop Collab",
+  "network": "ClipFarm (Whop)",
+  "status": "joined",
+  "launched": "2026-11-19",
+  "budget_total_usd": 12000,
+  "budget_remaining_usd": 11930,
+  "budget_checked_at": "2026-11-25",
+  "platforms": {
+    "tiktok":    {"cpm_usd": 1.50, "min_payout_usd": 3.00, "max_payout_usd": 400.00, "required_tags": ["@funko", "@theburntpeanut"]},
+    "instagram": {"cpm_usd": 1.50, "min_payout_usd": 3.00, "max_payout_usd": 400.00, "required_tags": ["@funko", "@theburntpeanut"]},
+    "youtube":   {"cpm_usd": 1.50, "min_payout_usd": 3.00, "max_payout_usd": 400.00, "required_tags": ["@OriginalFunko", "@theburntpeanut"]}
+  },
+  "min_engagement_rate": 0.005,
+  "keep_up_days": 30,
+  "tier1_countries": ["US", "GB", "CA", "AU"],
+  "tier1_min_share": 0.40,
+  "funko_line": "TheBurntPeanut just got his own Funko POP! Available exclusively for pre-order at Funko.com for a limited time!",
+  "allowed_facts": ["$14.99", "Funko.com", "pre-order", "limited time"],
+  "allowed_prices": ["14.99"],
+  "footage_only": true,
+  "footage_dir_env": "FUNKO_FOOTAGE_DIR",
+  "pop_overlay_allowed": false,
+  "_pop_overlay_note": "The brief allows overlaying the supplied Funko Pop image. CLAUDE.md bans publisher logos/key art, so this stays false until the owner says otherwise. Until then every edit must show the Pop in the stream footage or have Peanut talk about it.",
+  "require_disclosure": true,
+  "_disclosure_note": "This is a paid promotion. Each post needs '#ad' in the caption or the platform's branded-content / paid-promotion toggle switched on (disclosure_toggle: true in the post spec).",
+  "pop_keywords": ["funko", "pop", "figure", "figurine", "collab", "box", "pre-order", "preorder", "toy"],
+  "hook_examples": [
+    "OMG I'M NOT READY FOR THIS",
+    "THE SICKEST COLLAB OF 2026",
+    "FUNKO COOKED WITH PEANUT FOR THIS COLLAB",
+    "FUNKO IS COOKING WITH THIS LIMITED DROP",
+    "LIMITED FUNKO DROP WITH THEBURNTPEANUT"
+  ],
+  "submit_where": "Whop campaign page > Submit clip. Then open a ticket in Whop or Discord with the demographics screenshot once the stats load."
+}
