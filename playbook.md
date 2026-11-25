@@ -61,5 +61,8 @@ Credit: @streamer (Twitch)
 
 No verdict on a format in under 24 hours. Judge posting slots after 2 weeks.
 
+## Paid campaigns
+Paid CPM campaigns (such as ClipFarm x Funko x TheBurntPeanut) follow `docs/CAMPAIGNS.md` and the `campaign-scout` agent. Every run starts with `python -m scripts.campaign report --fetch`, and any post flagged **SUBMIT NOW** goes to the human first. Campaign footage replaces SCOUT: never clip outside the supplied folder. No Pop = no pay, so an edit that fails `check-edit` is never cut.
+
 ## Never
 Pay, sign up or upgrade anything. DM or message anyone. Change a profile. Imply we're official. Post without a valid approval. Print API keys.

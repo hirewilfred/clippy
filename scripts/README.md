@@ -10,6 +10,8 @@ Run tests: `python3 -m pytest -q` from the repo root.
 | `thumb.py` | Done: 1280x720 + 1080x1920 YouTube thumbnails, auto frame pick, under 2 MB |
 | `publish.py` | Done: Blotato v2 (presigned upload, TikTok/YouTube targets, thumbnailUrl), gated, dry-run default |
 | `desk.py` | Done: local Post desk (add, edit, thumbnail, approve, review, post/schedule). See docs/POST-DESK.md |
+| `campaign.py` | Done: paid-campaign payout math, edit/caption gates, payout watch + SUBMIT NOW report. See docs/CAMPAIGNS.md |
+| `moments.py` | Done: ranks 12-20 s windows in campaign footage (reaction spike + Pop mentions) |
 | `clip.py` | Done: 18 tests incl. an end-to-end render. `python -m scripts.clip spec.json --preview` |
 
 Still to build:
