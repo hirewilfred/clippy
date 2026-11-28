@@ -1,6 +1,6 @@
 # TheBurntPeanut x Funko Pop Collab: payout watch
 
-Run 2026-11-27 21:44 UTC. Estimates only; ClipFarm decides the payout.
+Run 2026-11-28 01:44 UTC. Estimates only; ClipFarm decides the payout.
 
 - Posts tracked: 0
 - Ready to submit: **0**
